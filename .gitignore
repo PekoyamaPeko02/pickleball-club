@@ -1,0 +1,24 @@
+# node / quasar
+node_modules/
+**/node_modules/
+dist/
+.quasar/
+*.local
+.env
+.env.*
+!.env.example
+
+# dotnet
+bin/
+obj/
+*.user
+.vs/
+TestResults/
+
+# os / editors
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+.claude/logs/

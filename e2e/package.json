@@ -1,0 +1,17 @@
+{
+  "name": "@pbc/e2e",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "playwright test",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.63.0",
+    "@types/node": "^22.10.0",
+    "@types/pg": "^8.11.10",
+    "pg": "^8.13.1",
+    "typescript": "~5.9.3"
+  }
+}

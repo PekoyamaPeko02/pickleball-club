@@ -1,0 +1,11 @@
+// Shared by the sign-in, register and password pages.
+.auth { max-width: 420px; }
+.auth__title { margin: 0 0 24px; color: var(--pbc-ink); }
+.auth__form { display: grid; gap: 12px; }
+.auth__links { margin: 16px 0 0; text-align: center; color: var(--pbc-text-2); }
+.auth__or {
+  display: flex; align-items: center; gap: 12px; margin: 24px 0 16px;
+  color: var(--pbc-text-3); font-size: 0.85rem;
+  &::before, &::after { content: ''; flex: 1; height: 1px; background: var(--pbc-line); }
+}
+.auth__note { color: var(--pbc-text-2); line-height: 1.6; }

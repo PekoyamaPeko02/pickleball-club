@@ -1,0 +1,69 @@
+/* Pickleball Club design tokens.
+   Direction: a quiet private club seen at night — ink, the blue of a pickleball court, chalk-white lines, and one warm
+   accent (marigold) kept for the thing to press. The court's own plan is the picture; there are no photographs yet.
+   PLACEHOLDER BRAND: no logo or club photography exists yet; swap these values when the real identity arrives. */
+@import url('https://fonts.googleapis.com/css2?family=Brygada+1918:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Albert+Sans:wght@400;500;600;700&display=swap');
+
+:root {
+  /* brand */
+  --pbc-ink: #14233b;            /* night: headings, primary buttons, dark panels */
+  --pbc-ink-deep: #0d1829;
+  --pbc-court: #2b5a85;          /* the playing surface */
+  --pbc-court-dim: #1e3654;      /* a court that is taken, at night */
+  --pbc-kitchen: #5d8bb5;        /* the non-volley zone, a step lighter than the court */
+  --pbc-brass: #e3a72b;          /* marigold: the one warm accent. Always carries ink text, never white. */
+  --pbc-brass-ink: #7a5306;      /* marigold as text on a pale ground */
+  --pbc-brass-surface: #fbf0d6;
+
+  /* surfaces */
+  --pbc-bg: #f3f5f4;             /* chalk: cool off-white */
+  --pbc-surface: #ffffff;
+  --pbc-surface-2: #e8ecea;
+  --pbc-line: #d6dcd9;
+  --pbc-line-strong: #b9c2be;
+  --pbc-text: #18222f;
+  --pbc-text-2: #515d6b;
+  --pbc-text-3: #8d97a2;
+  --pbc-positive: #23705a;
+  --pbc-positive-surface: #dff0ea;
+  --pbc-error: #b3261e;
+
+  /* type */
+  --pbc-font-display: 'Brygada 1918', 'Iowan Old Style', Georgia, serif;
+  --pbc-font-body: 'Albert Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+  /* shape & depth */
+  --pbc-r-sm: 0.375rem;
+  --pbc-r-lg: 0.75rem;
+  --pbc-shadow-1: 0 1px 2px rgba(20, 35, 59, 0.06), 0 1px 3px rgba(20, 35, 59, 0.05);
+}
+
+body {
+  font-family: var(--pbc-font-body);
+  background: var(--pbc-bg);
+  color: var(--pbc-text);
+  -webkit-font-smoothing: antialiased;
+}
+
+.pbc-display { font-family: var(--pbc-font-display); font-weight: 500; letter-spacing: -0.005em; }
+.pbc-h1 { font-family: var(--pbc-font-display); font-weight: 500; font-size: clamp(2.5rem, 6.4vw, 4.5rem); line-height: 1.02; letter-spacing: -0.015em; }
+.pbc-h2 { font-family: var(--pbc-font-display); font-weight: 500; font-size: clamp(1.625rem, 3.4vw, 2.375rem); line-height: 1.14; letter-spacing: -0.01em; }
+.pbc-h3 { font-family: var(--pbc-font-display); font-weight: 500; font-size: 1.3rem; line-height: 1.3; }
+.pbc-label { font-size: 0.75rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; }
+.pbc-muted { color: var(--pbc-text-2); }
+.pbc-num { font-variant-numeric: tabular-nums; }
+
+.pbc-card {
+  background: var(--pbc-surface);
+  border: 1px solid var(--pbc-line);
+  border-radius: var(--pbc-r-lg);
+  box-shadow: var(--pbc-shadow-1);
+}
+
+/* Buttons (use with q-btn unelevated no-caps) */
+.pbc-btn-brass { background: var(--pbc-brass) !important; color: var(--pbc-ink) !important; font-weight: 700; }
+.pbc-btn-ink { background: var(--pbc-ink) !important; color: #fff !important; font-weight: 600; }
+.pbc-btn-ghost { background: transparent !important; border: 1.5px solid var(--pbc-line-strong); color: var(--pbc-text) !important; }
+
+.pbc-page { max-width: 1120px; margin: 0 auto; padding: 24px 16px 64px; }
+@media (min-width: 1024px) { .pbc-page { padding: 40px 32px 96px; } }

@@ -1,0 +1,82 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    services:
+      db:
+        image: postgres:16
+        env:
+          POSTGRES_DB: pickleball
+          POSTGRES_USER: pickleball
+          POSTGRES_PASSWORD: pickleball
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U pickleball" --health-interval 5s --health-timeout 3s --health-retries 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+      - name: Apply schema + seed
+        env:
+          PGPASSWORD: pickleball
+        run: |
+          for f in db/init/*.sql; do psql -h localhost -U pickleball -d pickleball -v ON_ERROR_STOP=1 -f "$f"; done
+      - run: dotnet restore backend/PickleballClub.sln
+      - run: dotnet build backend/PickleballClub.sln --no-restore -c Release
+      - run: dotnet test backend/PickleballClub.sln --no-build -c Release --verbosity normal
+        env:
+          TEST_DB_PORT: 5432 # integration tests create their own database on the service container
+
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4 # version comes from package.json "packageManager"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm -r run typecheck
+      - run: pnpm -r run build
+
+  e2e:
+    runs-on: ubuntu-latest
+    services:
+      db:
+        image: postgres:16
+        env:
+          POSTGRES_DB: pickleball
+          POSTGRES_USER: pickleball
+          POSTGRES_PASSWORD: pickleball
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U pickleball" --health-interval 5s --health-timeout 3s --health-retries 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+      - uses: pnpm/action-setup@v4 # version comes from package.json "packageManager"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @pbc/e2e exec playwright install --with-deps chromium
+      - run: pnpm e2e # builds its own database (pickleball_e2e) on the service container and starts the API + both apps
+        env:
+          E2E_DB_PORT: 5432
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-traces
+          path: e2e/test-results
+          retention-days: 7
