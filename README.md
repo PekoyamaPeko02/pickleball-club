@@ -28,11 +28,17 @@ Requires Node 22+, pnpm 9, .NET 8 SDK, Docker.
 
 ```bash
 pnpm install
+pnpm dev                         # database + API (:5090) + customer site (:9010) + back office (:9011), until Ctrl-C
+pnpm demo:data                   # optional, in another terminal: a demo customer and a week of sample bookings
+```
+
+`pnpm dev` is the same as running these one by one:
+
+```bash
 pnpm db:up                       # PostgreSQL on localhost:5434; applies db/init/*.sql on first start
 pnpm api                         # http://localhost:5090/swagger
 pnpm --filter @pbc/web dev:api   # customer site  http://localhost:9010
 pnpm --filter @pbc/admin dev:api # back office    http://localhost:9011
-pnpm demo:data                   # optional: a demo customer and a week of sample bookings
 ```
 
 - The first Admin account is created when the API starts, from `Admin:Email` / `Admin:Password` — the development values are in `backend/src/PickleballClub.Api/appsettings.Development.json`.
