@@ -1,0 +1,109 @@
+# The free DEMO site on Render (https://render.com): the API as a Docker web service, the two apps as static sites.
+# Step by step: docs/DEMO-HOSTING.md. This is a demo — payments are simulated (Demo__Enabled) — not the Club's real site.
+#
+# The database is not here on purpose: Render deletes a free Postgres 30 days after creating it. The demo uses Neon.
+#
+# The three addresses below are written into the env vars further down. Render gives a service its name as the address
+# unless that name is taken, in which case it adds a few random letters. If that happens, correct the env vars marked
+# "address" in the Render Dashboard (docs/DEMO-HOSTING.md, "If Render changed an address").
+#   web    https://pickleball-club-demo.onrender.com
+#   admin  https://pickleball-club-demo-admin.onrender.com
+#   api    https://pickleball-club-demo-api.onrender.com
+
+services:
+  # ------------------------------------------------------------------ API (.NET 8, backend/)
+  - type: web
+    name: pickleball-club-demo-api
+    runtime: docker
+    plan: free # 0.1 CPU; sleeps after 15 minutes without a visitor, and the next visit then waits a minute or two
+    region: singapore
+    dockerfilePath: ./backend/src/PickleballClub.Api/Dockerfile
+    dockerContext: ./backend
+    healthCheckPath: /health
+    autoDeployTrigger: checksPass # deploy a push to main only after the GitHub checks pass
+    buildFilter:
+      paths:
+        - backend/**
+    envVars:
+      - key: PORT # the Dockerfile listens on 8080; Render would otherwise look for 10000
+        value: "8080"
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production
+      - key: ASPNETCORE_FORWARDEDHEADERS_ENABLED # the visitor's own IP (sign-in rate limit), not Render's proxy
+        value: "true"
+      - key: Demo__Enabled # simulated payments outside Development; see Services/Demo.cs
+        value: "true"
+      - key: Payments__Provider
+        value: mock
+      - key: Payments__MockWebhookSecret
+        generateValue: true
+      - key: Jwt__SigningKey
+        generateValue: true
+      # Asked for when the Blueprint is created:
+      - key: ConnectionStrings__Default # the postgresql:// URL from Neon, as Neon shows it
+        sync: false
+      - key: Admin__Email # the first Admin account, created on the first start
+        sync: false
+      - key: Admin__Password # at least 10 characters
+        sync: false
+      # address: where the apps live (links in emails, and who may call the API from a browser)
+      - key: App__WebUrl
+        value: https://pickleball-club-demo.onrender.com
+      - key: App__AdminUrl
+        value: https://pickleball-club-demo-admin.onrender.com
+      - key: Cors__Origins__0
+        value: https://pickleball-club-demo.onrender.com
+      - key: Cors__Origins__1
+        value: https://pickleball-club-demo-admin.onrender.com
+
+  # ------------------------------------------------------------------ customer site (apps/web)
+  - type: web
+    name: pickleball-club-demo
+    runtime: static
+    buildCommand: npx --yes pnpm@9.15.9 install --frozen-lockfile --filter "@pbc/web..." && npx --yes pnpm@9.15.9 --filter @pbc/web build
+    staticPublishPath: ./apps/web/dist/spa
+    autoDeployTrigger: checksPass
+    buildFilter:
+      paths:
+        - apps/web/**
+        - packages/**
+        - package.json
+        - pnpm-lock.yaml
+        - pnpm-workspace.yaml
+    routes:
+      - type: rewrite # the app routes in the browser (history mode): every path that is not a file is the app
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: NODE_VERSION
+        value: 22.22.0
+      - key: API_BASE # address: the API. Read at build time, so changing it needs a new deploy
+        value: https://pickleball-club-demo-api.onrender.com
+      - key: API_MOCK
+        value: "false"
+
+  # ------------------------------------------------------------------ back office (apps/admin)
+  - type: web
+    name: pickleball-club-demo-admin
+    runtime: static
+    buildCommand: npx --yes pnpm@9.15.9 install --frozen-lockfile --filter "@pbc/admin..." && npx --yes pnpm@9.15.9 --filter @pbc/admin build
+    staticPublishPath: ./apps/admin/dist/spa
+    autoDeployTrigger: checksPass
+    buildFilter:
+      paths:
+        - apps/admin/**
+        - packages/**
+        - package.json
+        - pnpm-lock.yaml
+        - pnpm-workspace.yaml
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: NODE_VERSION
+        value: 22.22.0
+      - key: API_BASE # address: the API. Read at build time, so changing it needs a new deploy
+        value: https://pickleball-club-demo-api.onrender.com
+      - key: API_MOCK
+        value: "false"

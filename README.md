@@ -19,7 +19,8 @@ backend/
   tests/PickleballClub.IntegrationTests xUnit against a real PostgreSQL
 db/init/    001_schema.sql · 002_seed.sql (placeholder courts, hours and prices)
 e2e/        Playwright tests against the real stack
-scripts/    demo-data.mjs — sample bookings for a development database
+scripts/    dev.mjs (pnpm dev) · demo-data.mjs (sample bookings) · db-apply.mjs (tables for a hosted database)
+render.yaml The free demo site on Render — see docs/DEMO-HOSTING.md
 ```
 
 ## Quick start
@@ -46,6 +47,12 @@ pnpm --filter @pbc/admin dev:api # back office    http://localhost:9011
 - `pnpm dev:web` alone runs the public pages on in-browser demo data, without the API; anything that needs an account needs the API.
 - `pnpm db:reset` drops the volume and re-runs the schema and seed. The schema lives in `db/init/*.sql`; after changing it, reset.
 
+## Demo site
+
+To show the site to people without paying for hosting, [`docs/DEMO-HOSTING.md`](docs/DEMO-HOSTING.md) puts a demo on
+Render and Neon (both free): `render.yaml` describes the three services, `pnpm db:apply` builds the tables in the hosted
+database, and `Demo__Enabled=true` lets payments be simulated there. A demo is never the Club's real site.
+
 ## Checks
 
 ```bash
@@ -56,7 +63,7 @@ pnpm e2e                                                                        
 
 ## Payments
 
-Development uses the `mock` provider: no money moves, and a booking is "paid" with the *Simulate payment* button (or `POST /api/v1/dev/bookings/{id}/simulate-payment`).
+Development uses the `mock` provider: no money moves, and a booking is "paid" with the *Simulate payment* button (or `POST /api/v1/dev/bookings/{id}/simulate-payment`). Outside Development the API refuses to start with `mock`, unless it is a demo site (`Demo__Enabled=true`).
 
 To take real payments through [Beam](https://docs.beamcheckout.com):
 

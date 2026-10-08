@@ -1,0 +1,4 @@
+# Build outputs from the host must not reach the image: its obj/ would replace the restore done inside the container.
+**/bin/
+**/obj/
+tests/

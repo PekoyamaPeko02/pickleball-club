@@ -8,7 +8,8 @@ namespace PickleballClub.Api.Features.Payments;
 
 public static class PaymentEndpoints
 {
-    public static RouteGroupBuilder MapPayments(this RouteGroupBuilder api, IWebHostEnvironment env)
+    /// <param name="simulate">Development or a demo site: also map the endpoint that pretends a payment arrived.</param>
+    public static RouteGroupBuilder MapPayments(this RouteGroupBuilder api, bool simulate)
     {
         // Gateway → us. The provider validates the signature; a Booking's status only ever becomes "confirmed" here.
         api.MapPost("/payments/webhook/{provider}", async (
@@ -34,9 +35,9 @@ public static class PaymentEndpoints
             return Results.Ok(new { received = true });
         }).AllowAnonymous().WithTags("Payments");
 
-        if (env.IsDevelopment())
+        if (simulate)
         {
-            // Dev helper: pretend the Customer paid the newest open payment of the Booking.
+            // Development and demo sites only: pretend the Customer paid the newest open payment of the Booking.
             api.MapPost("/dev/bookings/{id:guid}/simulate-payment", async (
                 Guid id, AppDbContext db, BookingService bookings, CancellationToken ct) =>
             {

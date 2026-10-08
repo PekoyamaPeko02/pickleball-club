@@ -10,11 +10,15 @@
     "typecheck": "pnpm -r run typecheck",
     "db:up": "docker compose up -d db",
     "db:reset": "docker compose down -v && docker compose up -d db",
+    "db:apply": "node scripts/db-apply.mjs",
     "api": "dotnet run --project backend/src/PickleballClub.Api",
     "demo:data": "node scripts/demo-data.mjs",
     "e2e": "pnpm --filter @pbc/e2e test"
   },
   "engines": {
     "node": ">=22"
+  },
+  "devDependencies": {
+    "pg": "^8.13.1"
   }
 }

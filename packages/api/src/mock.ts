@@ -113,6 +113,7 @@ export function createMockApi(): PbcApi {
         lastBookableDate: addDays(today, BOOKING_WINDOW_DAYS),
         courts: COURTS,
         operatingHours: [0, 1, 2, 3, 4, 5, 6].map((dayOfWeek) => ({ dayOfWeek, openHour: OPEN_HOUR, closeHour: CLOSE_HOUR })),
+        demo: false,
       };
       return delay(club);
     },

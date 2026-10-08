@@ -20,7 +20,14 @@
 
     <q-page-container>
       <q-banner v-if="isMockApi" dense class="mock-banner">Demo data — the back office needs the server to do anything.</q-banner>
-      <router-view />
+      <q-banner v-else-if="clubStore.club?.demo" dense class="mock-banner">Demo site — payments are simulated and nothing here is a real booking.</q-banner>
+      <!-- A server that was asleep needs a moment: wait here, then let the page load with it awake. -->
+      <div v-if="clubStore.connecting" class="connecting" role="status">
+        <q-spinner size="32px" color="primary" />
+        <p class="connecting__title">Connecting to the server…</p>
+        <p class="pbc-muted">This can take a minute or two.</p>
+      </div>
+      <router-view v-else />
     </q-page-container>
   </q-layout>
 </template>
@@ -60,4 +67,7 @@ function signOut() {
 .portal-header__user { font-size: 0.85rem; opacity: 0.8; }
 .portal-nav--active { color: var(--pbc-ink); background: var(--pbc-surface-2); font-weight: 600; }
 .mock-banner { background: var(--pbc-brass-surface); color: var(--pbc-brass-ink); text-align: center; font-size: 0.85rem; }
+.connecting { min-height: 50vh; display: grid; place-content: center; justify-items: center; text-align: center; }
+.connecting p { margin: 0; }
+.connecting__title { margin-top: 16px; font-weight: 600; color: var(--pbc-ink); }
 </style>

@@ -32,6 +32,8 @@ export interface ClubInfo {
   lastBookableDate: ClubDate;
   courts: Court[];
   operatingHours: OperatingHours[];
+  /** True on a demo site: payments are simulated and nothing booked there is real. */
+  demo: boolean;
 }
 
 /** A one-hour Slot of one Court. */

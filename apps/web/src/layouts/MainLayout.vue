@@ -31,7 +31,16 @@
       <q-banner v-if="isMockApi" dense class="mock-banner">
         Demo data — this page is running without the server.
       </q-banner>
-      <router-view />
+      <q-banner v-else-if="clubStore.club?.demo" dense class="mock-banner">
+        Demo site — bookings here are not real and no money is taken.
+      </q-banner>
+      <!-- A server that was asleep needs a moment: wait here, then let the page load with it awake. -->
+      <div v-if="clubStore.connecting" class="pbc-page connecting" role="status">
+        <q-spinner size="32px" color="primary" />
+        <p class="connecting__title">Connecting to the server…</p>
+        <p class="pbc-muted">This can take a minute or two.</p>
+      </div>
+      <router-view v-else />
     </q-page-container>
 
     <q-footer class="site-footer">
@@ -73,6 +82,9 @@ onMounted(() => clubStore.load());
 .brand { display: inline-flex; align-items: center; gap: 10px; font-size: 1.35rem; text-decoration: none; color: var(--pbc-ink); }
 .brand__mark { border-radius: 7px; }
 .mock-banner { background: var(--pbc-brass-surface); color: var(--pbc-brass-ink); text-align: center; font-size: 0.85rem; }
+.connecting { min-height: 50vh; display: grid; place-content: center; justify-items: center; text-align: center; }
+.connecting p { margin: 0; }
+.connecting__title { margin-top: 16px; font-weight: 600; color: var(--pbc-ink); }
 .site-footer { background: var(--pbc-ink-deep); color: rgba(255, 255, 255, 0.78); position: static; }
 .site-footer__inner { display: flex; flex-wrap: wrap; gap: 12px; justify-content: space-between; padding-top: 24px; padding-bottom: 24px; font-size: 0.875rem; }
 .site-footer a { color: inherit; }

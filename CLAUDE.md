@@ -18,11 +18,14 @@ The customer site is English only. The admin UI language is not decided yet (Eng
   Schema is owned by SQL in `db/init/*.sql` (NOT EF migrations). Keep `Data/AppDbContext.cs` and `Domain/Entities.cs` in sync by hand.
   EF uses `EFCore.NamingConventions` (snake_case).
 - `e2e/` — Playwright tests against the real API on its own database (`pnpm e2e`, needs `pnpm db:up`).
+- `render.yaml` + `docs/DEMO-HOSTING.md` — the free demo site (Render for the API and both apps, Neon for the database).
+  `pnpm db:apply` runs `db/init/*.sql` on a hosted, empty database.
 - Not configured: ESLint, Prettier, a JS unit-test runner. Formatting follows `.editorconfig`.
 
 ## Run
 ```bash
 pnpm install
+pnpm dev            # database + API (:5090) + web (:9010) + admin (:9011) in one terminal
 pnpm db:up          # first run applies db/init/*.sql; reset with: pnpm db:reset
 pnpm api            # http://localhost:5090/swagger
 pnpm --filter @pbc/web dev:api     # http://localhost:9010 against the real API
@@ -45,6 +48,8 @@ The integration tests need the dev DB up. They create their own database; they r
 - `pnpm e2e` builds its own database `pickleball_e2e` and starts the API (:5190) and both apps (:9110, :9111).
 
 ## Invariants — don't break these
+- Payments are simulated (mock provider, simulate-payment endpoint) only in Development or on a demo site (`Demo:Enabled`).
+  Demo never runs with a real provider, and never opens `/dev/emails` or Swagger. Its QR is not a PromptPay payload.
 - Only the payment webhook (`BookingService.ConfirmPaymentAsync`) confirms an online Booking. A payment that cannot buy its Booking is flagged `refund_due`; the system never refunds.
 - One open Hold per Customer is a partial unique index (`ux_bookings_one_hold_per_user`), not a check in code.
 - The Customer's Reschedule is one conditional UPDATE (`rescheduled_at IS NULL`); an Admin Move never sets `rescheduled_at`.
@@ -67,4 +72,5 @@ The integration tests need the dev DB up. They create their own database; they r
 First version built: accounts, online booking with Hold + payment (mock provider; Beam adapter written but never run against Beam),
 Reschedule, back office (schedule, walk-in, block, move, cancel, check-in, no-show, refunds to make, settings, revenue report), emails
 through a dev sender, Playwright e2e. `docs/BACKLOG.md` lists what was done, the choices made without asking, and what is needed before
-going live. Nothing has been committed yet.
+going live. The code is on GitHub (`Luck0332/Pickleball_Club`, private; CI on `main` and pull requests).
+A free demo site is prepared (`render.yaml`, `docs/DEMO-HOSTING.md`) but has never been deployed: Render and Neon were not run from here.

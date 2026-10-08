@@ -6,7 +6,8 @@
         <q-input v-model.trim="email" outlined type="email" label="Email" autocomplete="username" :rules="[required]" lazy-rules />
         <q-input v-model="password" outlined type="password" label="Password" autocomplete="current-password" :rules="[required]" lazy-rules />
         <p v-if="error" class="text-negative q-mb-none" role="alert">{{ error }}</p>
-        <q-btn unelevated no-caps size="lg" type="submit" class="pbc-btn-ink full-width" label="Sign in" :loading="busy" />
+        <p v-if="clubStore.connecting" class="pbc-muted q-mb-none" role="status">Connecting to the server… this can take a minute or two.</p>
+        <q-btn unelevated no-caps size="lg" type="submit" class="pbc-btn-ink full-width" label="Sign in" :loading="busy" :disable="clubStore.connecting" />
       </q-form>
       <p class="links"><router-link :to="{ name: 'forgot-password' }">Forgot your password?</router-link></p>
     </div>
@@ -14,17 +15,21 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useApi } from 'boot/api';
 import { messageOf } from 'src/composables/errors';
 import { useAuthStore } from 'stores/auth';
+import { useClubStore } from 'stores/club';
 
 defineOptions({ name: 'LoginPage' });
 
 const route = useRoute();
 const router = useRouter();
 const auth = useAuthStore();
+// Signing in is the first thing an Admin does: find out here whether the server is awake, not on the button.
+const clubStore = useClubStore();
+onMounted(() => void clubStore.load());
 const email = ref('');
 const password = ref('');
 const busy = ref(false);

@@ -33,13 +33,16 @@ builder.Services.Configure<BookingOptions>(cfg.GetSection("Booking"));
 builder.Services.Configure<PaymentOptions>(cfg.GetSection("Payments"));
 builder.Services.Configure<AdminOptions>(cfg.GetSection("AdminDesk"));
 builder.Services.Configure<NotificationOptions>(cfg.GetSection("Notifications"));
+builder.Services.Configure<DemoOptions>(cfg.GetSection("Demo"));
 var jwt = cfg.GetSection("Jwt").Get<JwtOptions>() ?? new JwtOptions();
 if (!builder.Environment.IsDevelopment() && jwt.SigningKey == JwtOptions.DevSigningKey)
     throw new InvalidOperationException("Set Jwt:SigningKey (env Jwt__SigningKey) to a secret of at least 32 characters outside Development.");
 
 // ---------------------------------------------------------------- data
+// Read here, not inside the lambda, so a connection string that cannot be understood stops the start with a clear message.
+var connectionString = ConnectionStrings.Normalize(cfg.GetConnectionString("Default"));
 builder.Services.AddDbContext<AppDbContext>(o => o
-    .UseNpgsql(cfg.GetConnectionString("Default"))
+    .UseNpgsql(connectionString)
     .UseSnakeCaseNamingConvention());
 
 // ---------------------------------------------------------------- services
@@ -49,11 +52,16 @@ builder.Services.AddScoped<BookingMailer>();
 builder.Services.AddScoped<BookingService>();
 builder.Services.AddScoped<AdminBookingService>();
 var payments = cfg.GetSection("Payments").Get<PaymentOptions>() ?? new PaymentOptions();
+var demo = cfg.GetSection("Demo").Get<DemoOptions>() ?? new DemoOptions();
+// Payments may be simulated on a developer's machine or on a demo site (Demo:Enabled) — nowhere else.
+var simulatedPayments = builder.Environment.IsDevelopment() || demo.Enabled;
+if (demo.Enabled && !string.Equals(payments.Provider, MockPaymentProvider.ProviderName, StringComparison.OrdinalIgnoreCase))
+    throw new InvalidOperationException("Demo:Enabled lets anyone mark a Booking as paid, so it only runs with Payments:Provider \"mock\". Turn Demo off to take real payments.");
 switch (payments.Provider.ToLowerInvariant())
 {
     case MockPaymentProvider.ProviderName:
-        if (!builder.Environment.IsDevelopment())
-            throw new InvalidOperationException("Payments:Provider is \"mock\": no money would be collected. Set it to \"beam\" outside Development.");
+        if (!simulatedPayments)
+            throw new InvalidOperationException("Payments:Provider is \"mock\": no money would be collected. Set it to \"beam\", or set Demo:Enabled for a demo site where nobody pays.");
         builder.Services.AddSingleton<IPaymentProvider, MockPaymentProvider>();
         break;
     case BeamPaymentProvider.ProviderName:
@@ -111,6 +119,8 @@ builder.Services.AddExceptionHandler<ApiExceptionHandler>();
 builder.Services.AddApiRateLimiting();
 
 var app = builder.Build();
+if (demo.Enabled)
+    app.Logger.LogWarning("Demo mode is ON: payments are simulated and anyone can mark a Booking as paid. Never run a real Club like this.");
 
 // CORS first so error responses (500 etc.) still carry CORS headers and the browser can read them.
 app.UseCors();
@@ -152,7 +162,7 @@ var api = app.MapGroup("/api/v1");
 api.MapClub();
 api.MapAuth();
 api.MapBookings();
-api.MapPayments(app.Environment);
+api.MapPayments(simulatedPayments);
 api.MapAdmin();
 api.MapDev(app.Environment);
 

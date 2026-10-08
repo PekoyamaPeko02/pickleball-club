@@ -19,7 +19,8 @@
           <template v-if="booking.payment?.method === 'promptpay'">
             <img v-if="qr" :src="qr" width="240" height="240" class="pay__qr" alt="PromptPay QR code for this payment">
             <p class="pay__amount pbc-num">{{ formatBaht(booking.total) }}</p>
-            <p class="pbc-muted">Scan with your banking app. This page updates by itself once the payment arrives.</p>
+            <p v-if="clubStore.club?.demo" class="pbc-muted">This is a demo: the QR cannot be paid. Use “Simulate payment” below to see what a customer sees once they have paid.</p>
+            <p v-else class="pbc-muted">Scan with your banking app. This page updates by itself once the payment arrives.</p>
           </template>
           <template v-else>
             <p class="pay__amount pbc-num">{{ formatBaht(booking.total) }}</p>
@@ -31,7 +32,7 @@
             <q-btn flat no-caps :label="booking.payment?.method === 'promptpay' ? 'Pay by card instead' : 'Pay by PromptPay QR instead'" :loading="switching" @click="switchMethod" />
             <q-btn flat no-caps color="negative" label="Cancel this booking" :loading="releasing" @click="release" />
           </div>
-          <q-btn v-if="isDev" outline no-caps color="grey-8" class="q-mt-md" label="Simulate payment (development only)" :loading="simulating" @click="simulate" />
+          <q-btn v-if="canSimulate" outline no-caps color="grey-8" class="q-mt-md" :label="simulateLabel" :loading="simulating" @click="simulate" />
         </section>
       </template>
 
@@ -134,6 +135,9 @@ onBeforeUnmount(stopTimers);
 
 const clubStore = useClubStore();
 const timezone = computed(() => clubStore.club?.timezone ?? 'Asia/Bangkok');
+// Payments can be simulated on a developer's machine and on a demo site; a real Club's server has no such endpoint.
+const canSimulate = computed(() => isDev || !!clubStore.club?.demo);
+const simulateLabel = computed(() => (clubStore.club?.demo ? 'Simulate payment (demo only)' : 'Simulate payment (development only)'));
 const canMove = computed(() => !!booking.value?.rescheduleUntil && Date.parse(booking.value.rescheduleUntil) > now.value);
 
 const timeLeft = computed(() => {

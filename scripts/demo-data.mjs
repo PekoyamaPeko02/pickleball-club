@@ -1,11 +1,39 @@
-// Fills a local development database with a few demo Bookings through the real API, so the pages have something to show:
-//   pnpm db:up && pnpm api          (in another terminal)
-//   pnpm demo:data
-// Development only: it uses the dev Admin account from appsettings.Development.json and the dev simulate-payment endpoint.
+// Fills a database with a few demo Bookings through the real API, so the pages have something to show.
+//   Local:      pnpm db:up && pnpm api          (in another terminal)
+//               pnpm demo:data
+//   Demo site:  API_BASE=https://<the api address> pnpm demo:data      (asks for the Admin's email and password,
+//               or takes them from ADMIN_EMAIL / ADMIN_PASSWORD)
+// Development and demo sites only: it needs the simulate-payment endpoint. Locally it signs in with the dev Admin
+// account from appsettings.Development.json.
 import { readFileSync } from 'node:fs';
+import { createInterface } from 'node:readline/promises';
 
-const API = `${process.env.API_BASE ?? 'http://localhost:5090'}/api/v1`;
-const dev = JSON.parse(readFileSync(new URL('../backend/src/PickleballClub.Api/appsettings.Development.json', import.meta.url), 'utf8'));
+const API_BASE = (process.env.API_BASE ?? 'http://localhost:5090').replace(/\/+$/, '');
+const API = `${API_BASE}/api/v1`;
+const local = /^https?:\/\/(localhost|127\.0\.0\.1)(:|$)/.test(API_BASE);
+
+async function adminAccount() {
+  if (process.env.ADMIN_EMAIL && process.env.ADMIN_PASSWORD) return { email: process.env.ADMIN_EMAIL, password: process.env.ADMIN_PASSWORD };
+  if (local) {
+    const dev = JSON.parse(readFileSync(new URL('../backend/src/PickleballClub.Api/appsettings.Development.json', import.meta.url), 'utf8'));
+    return { email: dev.Admin.Email, password: dev.Admin.Password };
+  }
+  const rl = createInterface({ input: process.stdin });
+  const answers = rl[Symbol.asyncIterator]();
+  const ask = async (question) => {
+    process.stdout.write(question);
+    return (await answers.next()).value ?? '';
+  };
+  const email = (await ask(`Admin email at ${API_BASE}: `)).trim();
+  const password = await ask('Admin password (shown as you type): ');
+  rl.close();
+  return { email, password };
+}
+
+function fail(message) {
+  console.error(message);
+  process.exit(1);
+}
 
 async function call(method, path, body, token) {
   const res = await fetch(API + path, {
@@ -17,8 +45,19 @@ async function call(method, path, body, token) {
   return { ok: res.ok, status: res.status, data };
 }
 
-const club = (await call('GET', '/club')).data;
-if (!club) throw new Error(`The API is not answering at ${API}. Start it with: pnpm api`);
+// A host that sleeps when idle needs a minute or two to answer its first request.
+async function getClub() {
+  for (let attempt = 1; attempt <= (local ? 1 : 24); attempt++) {
+    const club = (await call('GET', '/club').catch(() => null))?.data;
+    if (club?.courts) return club;
+    if (!local) {
+      if (attempt === 1) console.log('Waiting for the server to wake up (a minute or two)…');
+      await new Promise((resolve) => setTimeout(resolve, 8000));
+    }
+  }
+  return fail(`The API is not answering at ${API}.${local ? ' Start it with: pnpm api' : ''}`);
+}
+const club = await getClub();
 const day = (offset) => {
   const d = new Date(`${club.today}T00:00:00Z`);
   d.setUTCDate(d.getUTCDate() + offset);
@@ -26,8 +65,8 @@ const day = (offset) => {
 };
 const [c1, c2, c3, c4] = club.courts.map((c) => c.id);
 
-const admin = (await call('POST', '/auth/admin/login', { email: dev.Admin.Email, password: dev.Admin.Password })).data?.accessToken;
-if (!admin) throw new Error('Could not sign in as the dev Admin.');
+const admin = (await call('POST', '/auth/admin/login', await adminAccount())).data?.accessToken;
+if (!admin) fail('Could not sign in as the Admin: check the email and password.');
 
 // A demo Customer (created on the first run, signed in on later runs).
 const customer = { email: 'demo.customer@example.test', password: 'demo-customer-2026', displayName: 'Demo Customer', phone: '0812345678' };

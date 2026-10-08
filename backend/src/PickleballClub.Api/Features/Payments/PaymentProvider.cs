@@ -37,7 +37,7 @@ public interface IPaymentProvider
 
 public class PaymentOptions
 {
-    /// <summary>"mock" (local development, no money moves) or "beam".</summary>
+    /// <summary>"mock" (local development or a demo site, no money moves) or "beam".</summary>
     public string Provider { get; set; } = "mock";
     public BeamOptions Beam { get; set; } = new();
     /// <summary>PromptPay ID used by the mock provider to render a scannable (but never confirmed) QR.</summary>
@@ -47,17 +47,25 @@ public class PaymentOptions
 
 /// <summary>
 /// Local-dev provider: no money moves. PromptPay gets a real-looking QR payload, card gets no hosted page; either is
-/// "paid" through a signed webhook call or the Development-only simulate endpoint.
+/// "paid" through a signed webhook call or the simulate endpoint (Development and demo sites).
 /// </summary>
-public class MockPaymentProvider(IOptions<PaymentOptions> options) : IPaymentProvider
+public class MockPaymentProvider(IOptions<PaymentOptions> options, IOptions<DemoOptions> demo) : IPaymentProvider
 {
     public const string ProviderName = "mock";
+
+    /// <summary>
+    /// What the QR says on a demo site. It is deliberately not a PromptPay payload: the public can scan it, and a real one
+    /// would offer to send money to whoever owns <see cref="PaymentOptions.MockPromptPayId"/>.
+    /// </summary>
+    public const string DemoQrText = "DEMO - this QR is not a payment. Nobody is charged on this site.";
 
     public string Name => ProviderName;
 
     public Task<PaymentIntent> CreateAsync(PaymentRequest request, CancellationToken ct)
     {
-        var qr = request.Method == PaymentMethod.PromptPay ? PromptPay.Payload(options.Value.MockPromptPayId, request.Amount) : null;
+        var qr = request.Method != PaymentMethod.PromptPay ? null
+            : demo.Value.Enabled ? DemoQrText
+            : PromptPay.Payload(options.Value.MockPromptPayId, request.Amount);
         return Task.FromResult(new PaymentIntent(Name, $"mock_{Guid.NewGuid():N}", request.Method, qr, null, request.ExpiresAt));
     }
 

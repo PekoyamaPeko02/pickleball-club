@@ -17,6 +17,8 @@ Worked top-down. Tick an item with `- [x]` and add a one-line note when it is do
 - [x] **I End-to-end tests** — `e2e/` (Playwright 1.63, `pnpm e2e`): real API on its own database `pickleball_e2e` (rebuilt from `db/init` each run), both apps on ports 9110 / 9111. 7 tests: public pages, wrong password, the whole customer journey (choose hours → register → pay → move the booking), admin walk-in + cancel, court block, settings / refunds / revenue pages. CI job added (not run yet: the repository has no remote).
 - [x] **J Home / Courts / FAQ design** — new tokens (ink, court blue, chalk, one marigold accent; Brygada 1918 + Albert Sans), `CourtPlan` (a court drawn to scale), home page whose hero shows today's Courts lit when free with their next free hour, courts page, opening hours. Copy and brand are placeholders for the Club to replace.
 
+- [x] **K Free demo site** — `Demo:Enabled` lets the mock provider and simulate-payment run outside Development (never with a real provider; `/dev/emails` and Swagger stay closed; the demo QR cannot be paid; both apps show a "Demo site" banner). `render.yaml` (API in Docker + two static sites on Render, Singapore) with Neon for the database, `pnpm db:apply`, `pnpm demo:data` against a hosted API, a `postgresql://` URL as the connection string, "Connecting to the server…" while a sleeping host starts. Steps: `docs/DEMO-HOSTING.md`. Checked locally only — never deployed to Render or Neon.
+
 ## To do
 Nothing is in progress. Ideas that were deliberately left out of the first version: Open Play, coach booking, equipment rental,
 membership tiers (see `CONTEXT.md`), a PWA / mobile app, an admin UI in Thai.
@@ -26,9 +28,11 @@ membership tiers (see `CONTEXT.md`), a PWA / mobile app, an admin UI in Thai.
 - Replace `DevEmailSender` with a real provider (the Club has not chosen one); emails are only logged today.
 - Set `Auth:GoogleClientId` and try "Sign in with Google" once (the verifier has never met a real Google token).
 - Set `Jwt:SigningKey`, `Admin:Email` / `Admin:Password` (first Admin), `App:WebUrl` / `App:AdminUrl`, `Cors:Origins` for the real hosts.
-- Behind a reverse proxy, enable forwarded headers: the sign-in rate limit is per client IP and would otherwise see one address.
+- Behind a reverse proxy, set `ASPNETCORE_FORWARDEDHEADERS_ENABLED=true` (as `render.yaml` does): the sign-in rate limit is per client IP and would otherwise see one address.
+- Keep `Demo:Enabled` off: it lets anyone mark a Booking as paid. The demo site (`docs/DEMO-HOSTING.md`) is a separate deployment, not a stage of this one.
 - The public site is a client-rendered app: decide whether search engines need the home / courts / FAQ pages pre-rendered.
 - Write the Privacy Policy and Terms pages (placeholders today).
+
 ## Waiting on the club
 - Beam merchant ID, API key and webhook HMAC key (Playground first), a Google OAuth client ID, an email provider, hosting + domain.
 - Real courts, opening hours and prices (set them in the back office), photos, logo, the club's own words, Privacy Policy and Terms text.
