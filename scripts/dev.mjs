@@ -24,21 +24,24 @@ let stopping = false;
 function stop(code) {
   if (stopping) return;
   stopping = true;
-  for (const s of servers) s.child?.kill('SIGTERM');
+  for (const s of servers) {
+    if (!s.child) continue;
+    if (process.platform === 'win32') {
+      spawnSync('taskkill', ['/pid', String(s.child.pid), '/T', '/F']);
+    } else {
+      s.child.kill('SIGTERM');
+    }
+  }
   setTimeout(() => process.exit(code), 1500);
 }
 
 for (const s of servers) {
   const tag = `\x1b[${s.color}m${s.name.padEnd(5)}\x1b[0m │ `;
-  s.child = spawn(s.cmd, s.args, { cwd: root, env: { ...process.env, ...s.env } });
-  for (const stream of [s.child.stdout, s.child.stderr]) {
-    let rest = '';
-    stream.on('data', (chunk) => {
-      const lines = (rest + chunk).split('\n');
-      rest = lines.pop();
-      for (const line of lines) if (line.trim()) console.log(tag + line);
-    });
-  }
+  s.child = spawn(s.cmd, s.args, {
+  cwd: root,
+  env: { ...process.env, ...s.env },
+  shell: process.platform === 'win32',
+});
   s.child.on('exit', (code) => {
     if (stopping) return;
     console.error(`\n${s.name} stopped (exit ${code ?? 'signal'}); stopping the others.`);
